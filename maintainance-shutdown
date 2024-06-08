@@ -1,0 +1,76 @@
+#!/usr/bin/env sh
+#
+# MIT License
+#
+# Copyright (c) 2024  hilault
+#
+# Permission is hereby granted, free of charge, to any person obtaining a copy
+# of this software and associated documentation files (the "Software"), to deal
+# in the Software without restriction, including without limitation the rights
+# to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+# copies of the Software, and to permit persons to whom the Software is
+# furnished to do so, subject to the following conditions:
+#
+# The above copyright notice and this permission notice shall be included in all
+# copies or substantial portions of the Software.
+#
+# THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+# IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+# FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+# AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+# LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+# OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+# SOFTWARE.
+#
+#
+
+WITH_ERRORS="no"
+
+notify_all() {
+    for SOME_USER in /run/user/*; do
+        SOME_USER=$(basename "$SOME_USER")
+        sudo -u $(id -u -n "$SOME_USER") \
+            DBUS_SESSION_BUS_ADDRESS=unix:path=/run/user/"$SOME_USER"/bus notify-send -a "Shutdown maintenance service" "$1"
+    done
+}
+
+if ! /usr/bin/install -o root -g root -m 755 -d /var/run/maintainance-shutdown; then
+    logger "maintainance-shutdown: Could not create /var/run/maintainance-shutdown"
+    notify_all "Could not check and apply maintenance shutdown!"
+    exit 1
+fi
+
+# Constants
+ONE_WEEK_SECONDS=$((7 * 24 * 60 * 60))
+TEN_MINUTES_SECONDS=$((10 * 60))
+
+# Get the last boot time in seconds since epoch
+LAST_BOOT_TIME=$(date -d "$(uptime -s)" +%s)
+CURRENT_TIME=$(date +%s)
+
+# Calculate the time difference
+TIME_DIFF=$((CURRENT_TIME - LAST_BOOT_TIME))
+
+# Check if the time difference is greater than one week
+if [ "$TIME_DIFF" -gt "$ONE_WEEK_SECONDS" ]; then
+    # Notify all users via dbus
+    MESSAGE="System will halt in 10 minutes for maintenance."
+    notify_all $MESSAGE
+  
+    # Wait for 10 minutes
+    logger "maintainance-shutdown: shutdown in 10 minutes!"
+    sleep $TEN_MINUTES_SECONDS
+    
+    # Wait for 30 seconds
+    MESSAGE="System will halt in 30 seconds for maintenance."
+    notify_all $MESSAGE
+    sleep 30
+    
+    # Halt the system
+    logger "maintainance-shutdown: shutdown now!"
+    /sbin/shutdown -h now
+fi
+
+logger "maintainance-shutdown: check done"
+
+exit 0
