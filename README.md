@@ -16,5 +16,5 @@ Step 2: Run `install.sh` from the root of the repository.
 
 # Note
 
-Repo structure based on silverblue-update (https://github.com/tonywalker1/silverblue-update)
+Code structure based on silverblue-update (https://github.com/tonywalker1/silverblue-update)
 
