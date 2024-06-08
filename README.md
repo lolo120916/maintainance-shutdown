@@ -3,7 +3,7 @@ Daily check for maintainance shutdown
 
 # Overview
 
-This is a simple script that check time elapsed since last boot. If more that one week, shutdown system. The main purpose is:
+This is a simple script that check time elapsed since last boot. If more than one week, shutdown system. The main purposes are:
 
 1. Shutdown system periodically to apply system update
 2. Warn users that they have 10 minutes to finish their jobs before shutdown
